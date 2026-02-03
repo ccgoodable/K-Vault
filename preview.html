@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文件预览 | Katelya-TGBed</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+  <!-- PDF.js -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #8a4bff;
+      --primary-light: #b39ddb;
+      --accent-color: #ffd7e4;
+      --bg-gradient: linear-gradient(135deg, #ffd7e4 0%, #c8f1ff 100%);
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* 头部 */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .header-title {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-title i { color: var(--primary-color); }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #7a3ee8;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #666;
+      border: 1px solid #ddd;
+    }
+
+    .btn-secondary:hover {
+      background: var(--accent-color);
+      color: #333;
+    }
+
+    /* 预览容器 */
+    .preview-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 20px;
+    }
+
+    .file-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5em;
+    }
+
+    .file-details h2 {
+      font-size: 1.2em;
+      color: #333;
+      margin-bottom: 4px;
+      word-break: break-all;
+    }
+
+    .file-meta {
+      font-size: 0.85em;
+      color: #999;
+    }
+
+    .file-meta span {
+      margin-right: 16px;
+    }
+
+    /* 预览区域 */
+    .preview-area {
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 图片预览 */
+    .preview-image {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+    }
+
+    /* 视频预览 */
+    .preview-video {
+      max-width: 100%;
+      max-height: 70vh;
+      background: #000;
+    }
+
+    /* 音频预览 */
+    .preview-audio-container {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .audio-icon {
+      font-size: 4em;
+      color: var(--primary-color);
+      margin-bottom: 20px;
+    }
+
+    .preview-audio {
+      width: 100%;
+      max-width: 500px;
+    }
+
+    /* PDF 预览 */
+    .preview-pdf {
+      width: 100%;
+      height: 70vh;
+      border: none;
+    }
+
+    /* Office 文档预览 */
+    .preview-office-container {
+      width: 100%;
+      padding: 10px;
+    }
+
+    .preview-office {
+      width: 100%;
+      height: 70vh;
+      border: none;
+      border-radius: 8px;
+    }
+
+    /* 文本预览 */
+    .preview-text {
+      width: 100%;
+      height: 60vh;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border-radius: 8px;
+    }
+
+    /* 不支持预览 */
+    .preview-unsupported {
+      text-align: center;
+      padding: 60px 40px;
+      color: #666;
+    }
+
+    .preview-unsupported i {
+      font-size: 4em;
+      color: #ddd;
+      margin-bottom: 20px;
+    }
+
+    .preview-unsupported h3 {
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    /* 加载状态 */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      color: #666;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #eee;
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* NSFW 遮罩 */
+    .nsfw-mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      z-index: 10;
+    }
+
+    .nsfw-mask i {
+      font-size: 3em;
+      margin-bottom: 16px;
+      color: #f56c6c;
+    }
+
+    .nsfw-mask h3 {
+      margin-bottom: 8px;
+    }
+
+    .nsfw-mask p {
+      color: #aaa;
+      margin-bottom: 20px;
+    }
+
+    .nsfw-mask .btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .nsfw-mask .btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* 设置面板 */
+    .settings-panel {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 12px;
+    }
+
+    .settings-title {
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+
+    .setting-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #333;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: var(--primary-color);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <!-- 头部 -->
+    <div class="header">
+      <div class="header-title">
+        <i class="fas fa-eye"></i>
+        <span>文件预览</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" @click="copyLink">
+          <i class="fas fa-copy"></i> 复制链接
+        </button>
+        <button class="btn btn-primary" @click="downloadFile">
+          <i class="fas fa-download"></i> 下载文件
+        </button>
+        <a href="./" class="btn btn-secondary">
+          <i class="fas fa-home"></i> 返回首页
+        </a>
+      </div>
+    </div>
+
+    <!-- 预览卡片 -->
+    <div class="preview-card">
+      <!-- 文件信息 -->
+      <div class="file-info">
+        <div class="file-icon">
+          <i :class="fileIcon"></i>
+        </div>
+        <div class="file-details">
+          <h2>{{ fileName }}</h2>
+          <div class="file-meta">
+            <span><i class="fas fa-file"></i> {{ fileType }}</span>
+            <span v-if="fileSize"><i class="fas fa-hdd"></i> {{ formatSize(fileSize) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 预览区域 -->
+      <div class="preview-area">
+        <!-- 加载中 -->
+        <div class="loading" v-if="loading">
+          <div class="loading-spinner"></div>
+          <span>加载中...</span>
+        </div>
+
+        <!-- NSFW 遮罩 -->
+        <div class="nsfw-mask" v-if="isNsfw && !showNsfw && !loading">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>敏感内容警告</h3>
+          <p>此内容可能包含成人或敏感内容</p>
+          <button class="btn" @click="showNsfw = true">
+            <i class="fas fa-eye"></i> 仍然查看
+          </button>
+        </div>
+
+        <!-- 图片预览 -->
+        <img v-if="previewType === 'image' && !loading" 
+             :src="fileUrl" 
+             class="preview-image"
+             @load="onImageLoad"
+             @error="onLoadError">
+
+        <!-- 视频预览 -->
+        <video v-else-if="previewType === 'video' && !loading" 
+               :src="fileUrl" 
+               class="preview-video" 
+               controls
+               @loadeddata="loading = false"
+               @error="onLoadError">
+        </video>
+
+        <!-- 音频预览 -->
+        <div v-else-if="previewType === 'audio' && !loading" class="preview-audio-container">
+          <i class="fas fa-music audio-icon"></i>
+          <h3 style="margin-bottom: 20px; color: #333;">{{ fileName }}</h3>
+          <audio :src="fileUrl" class="preview-audio" controls autoplay @canplay="loading = false" @error="onLoadError">
+            您的浏览器不支持音频播放
+          </audio>
+          <p style="margin-top: 16px; color: #999; font-size: 0.85em;">
+            <i class="fas fa-info-circle"></i> 如无法播放，请尝试下载后使用本地播放器
+          </p>
+        </div>
+
+        <!-- PDF 预览 -->
+        <iframe v-else-if="previewType === 'pdf' && !loading" 
+                :src="fileUrl" 
+                class="preview-pdf">
+        </iframe>
+
+        <!-- Office 文档预览 -->
+        <div v-else-if="previewType === 'office' && !loading" class="preview-office-container">
+          <iframe :src="officeViewerUrl" class="preview-office" @load="loading = false"></iframe>
+          <p style="text-align: center; margin-top: 12px; color: #999; font-size: 0.85em;">
+            <i class="fas fa-info-circle"></i> 使用 Microsoft Office Online 预览，首次加载可能较慢
+          </p>
+        </div>
+
+        <!-- 文本预览 -->
+        <pre v-else-if="previewType === 'text' && !loading" class="preview-text">{{ textContent }}</pre>
+
+        <!-- 不支持预览 -->
+        <div v-else-if="previewType === 'unsupported' && !loading" class="preview-unsupported">
+          <i :class="fileIcon"></i>
+          <h3>此文件类型暂不支持在线预览</h3>
+          <p>您可以下载后使用本地软件打开</p>
+          <button class="btn btn-primary" @click="downloadFile" style="margin-top: 16px;">
+            <i class="fas fa-download"></i> 下载文件
+          </button>
+        </div>
+      </div>
+
+      <!-- 设置面板 -->
+      <div class="settings-panel">
+        <div class="settings-title">预览设置</div>
+        <div class="setting-item">
+          <label class="setting-label">
+            <i class="fas fa-shield-alt"></i>
+            <span>安全模式（自动检测敏感内容）</span>
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" v-model="safeMode" @change="saveSafeMode">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <label class="setting-label">
+            <i class="fas fa-bolt"></i>
+            <span>省流模式（不加载 >5MB 图片）</span>
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" v-model="dataSaverMode" @change="saveDataSaverMode">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+  <!-- NSFW.js for client-side detection -->
+  <script src="https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        fileUrl: '',
+        fileName: '',
+        fileType: '',
+        fileSize: 0,
+        previewType: 'unsupported',
+        loading: true,
+        textContent: '',
+        isNsfw: false,
+        showNsfw: false,
+        safeMode: true,
+        dataSaverMode: false,
+        nsfwModel: null
+      },
+      computed: {
+        fileIcon() {
+          const iconMap = {
+            'image': 'fas fa-image',
+            'video': 'fas fa-video',
+            'audio': 'fas fa-music',
+            'pdf': 'fas fa-file-pdf',
+            'office': 'fas fa-file-word',
+            'text': 'fas fa-file-alt',
+            'unsupported': 'fas fa-file'
+          };
+          return iconMap[this.previewType] || 'fas fa-file';
+        },
+        officeViewerUrl() {
+          // 使用 Microsoft Office Online Viewer
+          const fullUrl = encodeURIComponent(window.location.origin + this.fileUrl);
+          return `https://view.officeapps.live.com/op/embed.aspx?src=${fullUrl}`;
+        }
+      },
+      methods: {
+        formatSize(bytes) {
+          if (!bytes) return '';
+          const units = ['B', 'KB', 'MB', 'GB'];
+          let i = 0;
+          while (bytes >= 1024 && i < units.length - 1) {
+            bytes /= 1024;
+            i++;
+          }
+          return bytes.toFixed(i > 0 ? 2 : 0) + ' ' + units[i];
+        },
+
+        getPreviewType(ext) {
+          const types = {
+            image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico'],
+            video: ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'],
+            audio: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus'],
+            pdf: ['pdf'],
+            office: ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'],
+            text: ['txt', 'md', 'json', 'xml', 'html', 'css', 'js', 'ts', 'py', 'java', 'c', 'cpp', 'h', 'sh', 'sql', 'yaml', 'yml', 'log', 'csv', 'ini', 'conf', 'cfg']
+          };
+          
+          for (const [type, exts] of Object.entries(types)) {
+            if (exts.includes(ext)) return type;
+          }
+          return 'unsupported';
+        },
+
+        async init() {
+          // 获取 URL 参数
+          const params = new URLSearchParams(window.location.search);
+          const file = params.get('file') || params.get('f');
+          
+          if (!file) {
+            // 尝试从路径获取
+            const path = window.location.pathname;
+            if (path.startsWith('/file/')) {
+              this.fileUrl = path;
+              this.fileName = path.split('/').pop();
+            } else {
+              this.loading = false;
+              this.previewType = 'unsupported';
+              return;
+            }
+          } else {
+            this.fileUrl = file.startsWith('/') ? file : `/file/${file}`;
+            this.fileName = file.split('/').pop();
+          }
+
+          // 获取文件扩展名
+          const ext = this.fileName.split('.').pop().toLowerCase();
+          this.fileType = ext.toUpperCase();
+          this.previewType = this.getPreviewType(ext);
+
+          // 加载设置
+          this.loadSettings();
+
+          // 如果是文本，获取内容
+          if (this.previewType === 'text') {
+            await this.loadTextContent();
+          } else if (this.previewType === 'unsupported') {
+            this.loading = false;
+          }
+
+          // 初始化 NSFW 检测
+          if (this.safeMode && this.previewType === 'image') {
+            await this.initNsfwDetection();
+          }
+        },
+
+        async loadTextContent() {
+          try {
+            const response = await fetch(this.fileUrl);
+            this.textContent = await response.text();
+            this.loading = false;
+          } catch (e) {
+            console.error('Load text error:', e);
+            this.loading = false;
+          }
+        },
+
+        async initNsfwDetection() {
+          try {
+            this.nsfwModel = await nsfwjs.load();
+          } catch (e) {
+            console.error('NSFW model load error:', e);
+          }
+        },
+
+        async onImageLoad(e) {
+          this.loading = false;
+          
+          // NSFW 检测
+          if (this.safeMode && this.nsfwModel) {
+            try {
+              const predictions = await this.nsfwModel.classify(e.target);
+              const nsfw = predictions.find(p => 
+                (p.className === 'Porn' || p.className === 'Hentai' || p.className === 'Sexy') 
+                && p.probability > 0.5
+              );
+              this.isNsfw = !!nsfw;
+            } catch (e) {
+              console.error('NSFW detection error:', e);
+            }
+          }
+        },
+
+        onLoadError() {
+          this.loading = false;
+          this.previewType = 'unsupported';
+        },
+
+        copyLink() {
+          const url = window.location.origin + this.fileUrl;
+          navigator.clipboard.writeText(url).then(() => {
+            alert('链接已复制');
+          });
+        },
+
+        downloadFile() {
+          const link = document.createElement('a');
+          link.href = this.fileUrl;
+          link.download = this.fileName;
+          link.click();
+        },
+
+        loadSettings() {
+          this.safeMode = localStorage.getItem('safeMode') !== 'false';
+          this.dataSaverMode = localStorage.getItem('dataSaverMode') === 'true';
+        },
+
+        saveSafeMode() {
+          localStorage.setItem('safeMode', this.safeMode);
+        },
+
+        saveDataSaverMode() {
+          localStorage.setItem('dataSaverMode', this.dataSaverMode);
+        },
+
+        async checkAuth() {
+          try {
+            const response = await fetch('/api/auth/check', { credentials: 'include' });
+            const data = await response.json();
+            if (data.authRequired && !data.authenticated) {
+              window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+              return false;
+            }
+            return true;
+          } catch (e) {
+            console.error('Auth check failed:', e);
+            return true;
+          }
+        }
+      },
+      async mounted() {
+        const isAuth = await this.checkAuth();
+        if (!isAuth) return;
+        this.init();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -221,9 +221,13 @@
         transform: scale(1.02);
       }
 
-      .header-title i {
-        color: var(--primary-color);
-        font-size: 1.1em;
+      .header-title .brand-logo {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 4px 12px rgba(138, 75, 255, 0.2);
+        background: rgba(255, 255, 255, 0.92);
       }
 
       .nav-links {
@@ -1550,7 +1554,13 @@
       <!-- 头部导航 -->
       <div class="header">
         <div class="header-title">
-          <i class="fas fa-cloud-upload-alt"></i>
+          <img
+            src="/logo.png"
+            alt="K-Vault Logo"
+            class="brand-logo"
+            loading="eager"
+            onerror="this.onerror=null;this.src='/favicon.ico';"
+          />
           <span>K-Vault</span>
         </div>
         <div class="nav-links">

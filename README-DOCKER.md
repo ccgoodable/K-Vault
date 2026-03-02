@@ -16,7 +16,14 @@ npm run docker:init-env
 Alternative shell entrypoint:
 
 ```bash
-bash scripts/bootstrap-env.sh
+./scripts/bootstrap-env.sh
+```
+
+Note: `scripts/bootstrap-env.sh` must have executable permission.  
+If you are on Windows or the execute bit is unavailable, use:
+
+```bash
+node scripts/bootstrap-env.js
 ```
 
 What this does:
@@ -218,6 +225,8 @@ Options:
 - ignore it (build still works)
 - enable bake explicitly: `set COMPOSE_BAKE=true` (PowerShell: `$env:COMPOSE_BAKE='true'`)
 - or disable it: `set COMPOSE_BAKE=false`
+- if you see `Docker Compose is configured to build using Bake, but buildx isn't installed`:
+  - Ubuntu install command: `sudo apt-get install docker-buildx`
 
 ## Local Development
 
